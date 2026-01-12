@@ -56,7 +56,7 @@ class cssGotoHandler: GotoDeclarationHandler {
 
 //                    val path = importPath.trim('\'', '"')
 
-                    resolveCssFile (ref.containingFile, importPath)?.let {
+                    resolveCssFile(ref.containingFile, importPath)?.let { v ->
                         return null
                     }
 

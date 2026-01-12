@@ -3,6 +3,7 @@ package top.jinjin.cssmodulegoto
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
+import java.nio.file.Paths
 
 object util {
     fun resolveCssFile(
@@ -17,18 +18,22 @@ object util {
 
         return when {
             path.startsWith(".") -> {
-                VfsUtil.findRelativeFile(
-                    currentDir,
-                    *path.split("/").toTypedArray()
-                )
+                val resolvedPath = Paths.get(currentDir.path).resolve(path)
+                val vfs = VfsUtil.findFileByIoFile(resolvedPath.toFile(), true)
+                if (vfs != null) {
+                    return vfs
+                }
+                return null
             }
             path.startsWith("@/") -> {
                 val srcDir = psiFile.project.baseDir.findChild("src") ?: return null
                 val rel = path.removePrefix("@/")
-                VfsUtil.findRelativeFile(
-                    srcDir,
-                    *rel.split("/").toTypedArray()
-                )
+                val resolvedPath = Paths.get(currentDir.path).resolve(rel)
+                val vfs = VfsUtil.findFileByIoFile(resolvedPath.toFile(), true)
+                if (vfs != null) {
+                    return vfs
+                }
+                return null
             }
             else -> null
         }
