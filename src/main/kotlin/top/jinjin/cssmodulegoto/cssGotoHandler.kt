@@ -13,6 +13,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.parentOfType
 import com.intellij.psi.util.parentOfTypes
 import com.intellij.psi.xml.XmlAttribute
+import top.jinjin.cssmodulegoto.util.navigateToCssClass
 import top.jinjin.cssmodulegoto.util.resolveCssFile
 
 class cssGotoHandler: GotoDeclarationHandler {
@@ -31,33 +32,27 @@ class cssGotoHandler: GotoDeclarationHandler {
 
         // 获取到 style 的 vfs，一般而言都是 import styleName from './index.less|css|scss' 等
         PsiTreeUtil.getParentOfType(sourceElement, JSIndexedPropertyAccessExpression::class.java, false)?.let {ref ->
-
-            //
             val imports = PsiTreeUtil.findChildrenOfType(
                 ref.containingFile,
                 ES6ImportDeclaration::class.java
             )
 
-            val styleName = ref.qualifier?.text
-            val className = sourceElement.text
+//            val  styleName = ref.qualifier?.text
 
-//            val importDecl = ref.containingFile.children
-//                .filterIsInstance<ES6ImportDeclaration>()
-//                .firstOrNull { it.importedBindings?.text == "style" }
-//                ?: return null
+            val styleName = ref.qualifier?.text
+            val index = ref.indexExpression as? JSLiteralExpression
+            val className = index?.stringValue ?: return null
 
 
             for (imp in imports) {
 
                 if (imp.importedBindings[0].name == styleName) {
-//                    imp.fromClause?.referenceText
                     val importPath = imp.fromClause?.referenceText ?: return null
-//                    val currentDir = ref.containingFile.parent ?: return null
-
-//                    val path = importPath.trim('\'', '"')
-
-                    resolveCssFile(ref.containingFile, importPath)?.let { v ->
-                        return null
+                    resolveCssFile(ref.containingFile, importPath)?.let { vfs ->
+                        val navigateToCssClass = navigateToCssClass(ref.project, vfs, className)
+                        if ( navigateToCssClass != null) {
+                            return arrayOf( navigateToCssClass)
+                        }
                     }
 
                     return null
