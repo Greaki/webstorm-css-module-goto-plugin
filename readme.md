@@ -1,8 +1,3 @@
-太好了 🎉
-下面是一份**可以直接用于发布的英文 README**，内容覆盖功能说明、使用方式、支持范围和注意事项，适合上传到 JetBrains Marketplace / GitHub。
-
----
-
 # CSS Modules Go To Definition (WebStorm / IntelliJ)
 
 A productivity plugin for **WebStorm / IntelliJ IDEA** that enables **Ctrl / Cmd + Click navigation from CSS Modules class usage in React to the exact definition in CSS / Less / Scss / Stylus files**.
