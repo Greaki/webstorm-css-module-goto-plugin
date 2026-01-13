@@ -13,7 +13,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.parentOfType
 import com.intellij.psi.util.parentOfTypes
 import com.intellij.psi.xml.XmlAttribute
-import top.jinjin.cssmodulegoto.util.navigateToCssClass
+import top.jinjin.cssmodulegoto.util.findCssClass
 import top.jinjin.cssmodulegoto.util.resolveCssFile
 
 class cssGotoHandler: GotoDeclarationHandler {
@@ -49,9 +49,9 @@ class cssGotoHandler: GotoDeclarationHandler {
                 if (imp.importedBindings[0].name == styleName) {
                     val importPath = imp.fromClause?.referenceText ?: return null
                     resolveCssFile(ref.containingFile, importPath)?.let { vfs ->
-                        val navigateToCssClass = navigateToCssClass(ref.project, vfs, className)
+                        val navigateToCssClass = findCssClass(ref.project, vfs, className)
                         if ( navigateToCssClass != null) {
-                            return arrayOf( navigateToCssClass)
+                            return arrayOf(navigateToCssClass)
                         }
                     }
 

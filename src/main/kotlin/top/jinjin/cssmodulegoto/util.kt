@@ -7,6 +7,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.css.CssClass
+import com.intellij.psi.css.CssRuleset
+import com.intellij.psi.css.CssSelector
 import com.intellij.psi.util.PsiTreeUtil
 import java.nio.file.Paths
 
@@ -37,35 +39,22 @@ object util {
         }
     }
 
-    // 跳转到 css 文件指定类名，如果没有找到类名，直接返回 null
-    fun navigateToCssClass(
+    fun findCssClass(
         project: Project,
         cssFile: VirtualFile,
-        className: String
-    ): CssClass? {
+        target: String
+    ): CssSelector? {
         val psiFile = PsiManager.getInstance(project).findFile(cssFile) ?: return null
 
-        val cssClass = findCssClass(psiFile, className) ?: return null
-
-        return cssClass
-    }
-
-
-    fun findCssClass(
-        psiFile: PsiFile,
-        target: String
-    ): CssClass? {
-
-        val classes = PsiTreeUtil.findChildrenOfType(
+        val classSelectors = PsiTreeUtil.findChildrenOfType(
             psiFile,
-            CssClass::class.java
+            CssSelector::class.java
         )
 
-        for (cls in classes) {
-            if (cls.name == target) return cls
-
-            if (matchesNestedClass(cls, target)) {
-                return cls
+        for (selector in classSelectors) {
+            val resolved = resolve(selector) ?: continue
+            if (resolved == target) {
+                return selector
             }
         }
         return null
@@ -80,6 +69,79 @@ object util {
 
         val resolved = parent.name + name.removePrefix("&")
         return resolved == target
+    }
+
+
+    fun resolveSelectorText(selector: CssSelector): String? {
+        var text = selector.text.trim()
+
+        if (!text.contains("&")) {
+            return text.removePrefix(".")
+        }
+
+        var current = selector
+        var resolved = text
+
+        while (resolved.contains("&")) {
+            val parentRuleset = PsiTreeUtil.getParentOfType(
+                current,
+                CssRuleset::class.java
+            )?.parent ?: return null
+
+            val parentSelector = PsiTreeUtil.findChildOfType(
+                parentRuleset,
+                CssSelector::class.java
+            ) ?: return null
+
+            resolved = resolved.replace(
+                "&",
+                parentSelector.text.removePrefix(".")
+            )
+
+            current = parentSelector
+        }
+
+        return resolved.removePrefix(".")
+    }
+
+    /**
+     * 从当前 selector 出发，递归向上解析 &，
+     * 最终得到完整 class 名（不带 .）
+     */
+    fun resolve(selector: CssSelector): String? {
+        return resolveInternal(selector)?.removePrefix(".")
+    }
+
+    private fun resolveInternal(selector: CssSelector): String? {
+        val text = selector.text.trim()
+
+        // 如果已经是普通类名，直接返回
+        if (!text.contains("&")) {
+            return text
+        }
+
+        // 当前 ruleset（注意：这是 &-test 自己那一层）
+        val currentRuleset = PsiTreeUtil.getParentOfType(
+            selector,
+            CssRuleset::class.java
+        ) ?: return null
+
+        // 父 ruleset（& 的真实语义来源）
+        val parentRuleset = PsiTreeUtil.getParentOfType(
+            currentRuleset.parent,
+            CssRuleset::class.java
+        ) ?: return null
+
+        val parentSelector = PsiTreeUtil.findChildOfType(
+            parentRuleset,
+            CssSelector::class.java
+        ) ?: return null
+
+        val parentResolved = resolveInternal(parentSelector)
+            ?: return null
+
+        // 用父 selector 替换 &
+        return text.replace("&", parentResolved)
     }
 
 
