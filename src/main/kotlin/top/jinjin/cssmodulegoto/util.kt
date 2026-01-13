@@ -30,7 +30,9 @@ object util {
                 VfsUtil.findFileByIoFile(resolvedPath.toFile(), true)
             }
             path.startsWith("@/") -> {
-                val srcDir = psiFile.project.baseDir.findChild("src") ?: return null
+                val projectBasePath = psiFile.project.basePath ?: return null
+                val projectBaseDir = VfsUtil.findFile(Paths.get(projectBasePath), true) ?: return null
+                val srcDir = projectBaseDir.findChild("src") ?: return null
                 val rel = path.removePrefix("@/")
                 val resolvedPath = Paths.get(srcDir.path).resolve(rel)
                 VfsUtil.findFileByIoFile(resolvedPath.toFile(), true)
