@@ -45,8 +45,7 @@ class cssGotoHandler: GotoDeclarationHandler {
 
 
             for (imp in imports) {
-
-                if (imp.importedBindings[0].name == styleName) {
+                if (imp.importedBindings.isNotEmpty() && imp.importedBindings[0].name == styleName) {
                     val importPath = imp.fromClause?.referenceText ?: return null
                     resolveCssFile(ref.containingFile, importPath)?.let { vfs ->
                         val navigateToCssClass = findCssClass(ref.project, vfs, className)
